@@ -1,0 +1,131 @@
+---
+import { db } from "../../db";
+import CaseCard from "../molecules/CaseCard.astro";
+
+// Fetch the most recent 6 posts
+const recentCases = await db.post.findMany({
+    orderBy: {
+        createdAt: "desc",
+    },
+    take: 6,
+});
+---
+
+<section id="casos-recientes" class="recent-cases">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Casos Recientes</h2>
+            <p class="section-desc">
+                Ayúdanos a reunirlos con sus familias o dales un nuevo hogar
+                lleno de amor.
+            </p>
+        </div>
+
+        <div class="cases-grid">
+            {
+                recentCases.length === 0 ? (
+                    <div class="empty-state">
+                        <p>
+                            Aún no hay casos reportados. ¡Sé el primero en
+                            publicar uno!
+                        </p>
+                    </div>
+                ) : (
+                    recentCases.map((pet_case) => (
+                        <CaseCard petCase={pet_case} />
+                    ))
+                )
+            }
+        </div>
+
+        <div class="center-btn">
+            <a href="/casos" class="btn btn-secondary">Ver todos los casos</a>
+        </div>
+    </div>
+</section>
+
+<style>
+    .recent-cases {
+        padding-top: 6rem;
+        padding-bottom: 8rem;
+        background-color: var(--c-surface-secondary);
+        position: relative;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .section-title {
+        color: var(--c-text);
+        margin-bottom: 1rem;
+    }
+
+    .section-desc {
+        color: var(--c-secondary);
+        font-size: 1.125rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .cases-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4rem 2rem;
+        background-color: var(--c-surface-elevated);
+        border-radius: var(--radius-md);
+        border: 1px dashed var(--c-primary);
+        color: var(--c-secondary);
+    }
+
+    .center-btn {
+        display: flex;
+        justify-content: center;
+    }
+
+    .animate-up {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+</style>
+
+<script>
+    import gsap from "gsap";
+    import ScrollTrigger from "gsap/ScrollTrigger";
+
+    // Register ScrollTrigger
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Animate section headers
+    gsap.from(".section-header", {
+        scrollTrigger: {
+            trigger: ".recent-cases",
+            start: "top 80%",
+        },
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power2.out",
+    });
+
+    // Stagger animate cards
+    gsap.to(".animate-up", {
+        scrollTrigger: {
+            trigger: ".cases-grid",
+            start: "top 85%",
+        },
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: "power3.out",
+    });
+</script>

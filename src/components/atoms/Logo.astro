@@ -1,0 +1,29 @@
+---
+// Logo.astro
+---
+
+<a href="/" class="logo" id="logo">
+    <span class="logo-icon">🐾</span>
+    <span class="logo-text">Guata<span class="logo-highlight">pets</span></span>
+</a>
+
+<style>
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: var(--font-primary);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--c-secondary);
+        text-decoration: none;
+    }
+
+    .logo-icon {
+        font-size: 1.75rem;
+    }
+
+    .logo-highlight {
+        color: var(--c-primary);
+    }
+</style>

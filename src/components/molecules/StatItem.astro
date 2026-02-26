@@ -1,0 +1,35 @@
+---
+// StatItem.astro
+interface Props {
+    count: number;
+    label: string;
+}
+
+const { count, label } = Astro.props;
+---
+
+<div class="stat-item">
+    <span class="stat-number">{count}</span>
+    <span class="stat-label">{label}</span>
+</div>
+
+<style>
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-number {
+        font-family: var(--font-primary);
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--c-text);
+        line-height: 1.1;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--c-secondary);
+        font-weight: 500;
+    }
+</style>

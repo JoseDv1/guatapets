@@ -1,0 +1,38 @@
+---
+interface Props {
+    type: "lost" | "found" | "adopt" | string;
+}
+
+const { type } = Astro.props;
+
+// Helper function to get badge text based on type
+const getBadgeText = (t: string) => {
+    switch (t) {
+        case "lost":
+            return "Perdido";
+        case "found":
+            return "Encontrado";
+        case "adopt":
+            return "En Adopción";
+        default:
+            return "Desconocido";
+    }
+};
+---
+
+<span class={`case-badge badge-${type}`}>
+    {getBadgeText(type)}
+</span>
+
+<style>
+    .case-badge {
+        align-self: flex-start;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-full);
+        margin-bottom: 1rem;
+    }
+</style>

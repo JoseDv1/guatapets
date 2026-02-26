@@ -14,9 +14,11 @@ This is a web application about animals in Guatapé, Colombia, a place where you
 
 ## Scripts
 
-- `bun run dev` for development
-- `bun run build` for production
-- `bun run preview` for preview
+Always run all the commands with `bun --bun`.
+
+- `bun --bun run dev` for development
+- `bun --bun run build` for production
+- `bun --bun run preview` for preview
 
 ## Coding Style
 

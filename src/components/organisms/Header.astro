@@ -1,0 +1,94 @@
+---
+import Logo from "../atoms/Logo.astro";
+---
+
+<header class="header glass" id="main-header">
+  <div class="container header-container">
+    <Logo />
+
+    <nav class="nav-links">
+      <a href="/perdidos" class="nav-link">Perdidos</a>
+      <a href="/encontrados" class="nav-link">Encontrados</a>
+      <a href="/adopcion" class="nav-link">Adopción</a>
+    </nav>
+
+    <div class="header-actions">
+      <a href="/publicar" class="btn btn-primary btn-sm">Publicar Caso</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--nav-height);
+    z-index: 100;
+    border-bottom: 1px solid rgba(158, 100, 66, 0.1);
+  }
+
+  .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  .nav-links {
+    display: none;
+    gap: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .nav-links {
+      display: flex;
+    }
+  }
+
+  .nav-link {
+    font-weight: 500;
+    color: var(--c-text);
+    position: relative;
+    padding-bottom: 0.25rem;
+    transition: color 0.3s ease;
+  }
+
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background-color: var(--c-primary);
+    transition: width 0.3s var(--ease-spring);
+  }
+
+  .nav-link:hover {
+    color: var(--c-primary);
+  }
+
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+  }
+</style>
+
+<script>
+  import gsap from "gsap";
+
+  // Animate header on load
+  gsap.from("#main-header", {
+    y: -100,
+    opacity: 0,
+    duration: 1,
+    ease: "power3.out",
+    delay: 0.2,
+  });
+</script>

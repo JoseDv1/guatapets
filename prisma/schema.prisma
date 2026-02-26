@@ -1,0 +1,30 @@
+generator client {
+    provider = "prisma-client"
+    output   = "../src/db/generated"
+}
+
+datasource db {
+    provider = "sqlite"
+}
+
+model Post {
+    id           Int      @id @default(autoincrement())
+    type         String
+    species      String
+    name         String?
+    description  String
+    breed        String?
+    color        String?
+    gender       String?  @default("unknown")
+    imageUrl     String?  @map("image_url")
+    location     String
+    status       String   @default("active")
+    contactName  String   @map("contact_name")
+    contactPhone String   @map("contact_phone")
+    contactEmail String?  @map("contact_email")
+    visibility   String   @default("public")
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+    @@map("posts")
+}

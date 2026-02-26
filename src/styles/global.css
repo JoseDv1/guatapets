@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+
+:root {
+  /* Simple Color Palette */
+  --c-primary: hsl(21, 48%, 36%);
+  /* #8a5030 */
+  --c-secondary: hsl(21, 43%, 18%);
+  /* #42281a */
+  --c-bg: hsl(30, 33%, 98%);
+  /* #fcfaf8 */
+  --c-text: hsl(21, 44%, 12%);
+  /* #2c1a11 */
+
+  /* Accent colors */
+  --c-accent-alert: hsl(358, 69%, 66%);
+  /* #e56b6f */
+  --c-accent-success: hsl(155, 21%, 42%);
+  /* #55826f */
+
+  /* Surface / Layout colors */
+  --c-surface-primary: var(--c-bg);
+  --c-surface-secondary: hsl(21, 56%, 91%);
+  /* Simple cream for contrast boxes (#f5e6de) */
+  --c-surface-elevated: hsl(0, 0%, 100%);
+
+  /* Aliases for text */
+  --c-text-primary: var(--c-text);
+  --c-text-inverse: var(--c-bg);
+
+  /* Typography */
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Layout constraints */
+  --max-w-screen: 1280px;
+  --nav-height: 80px;
+
+  /* Spacing and border */
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 2rem;
+  --radius-full: 9999px;
+
+  /* Easing for fine CSS animations */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Global Reset & Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--c-surface-primary);
+  color: var(--c-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--c-text-primary);
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+h2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+h3 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Utility Containers */
+.container {
+  width: 100%;
+  max-width: var(--max-w-screen);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-inline: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding-inline: 4rem;
+  }
+}
+
+/* Glassmorphism helpers */
+.glass {
+  background: hsla(0, 0%, 100%, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(0, 0%, 100%, 0.5);
+}
+
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: var(--radius-full);
+  transition: all 0.3s var(--ease-spring);
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: var(--c-primary);
+  color: var(--c-text-inverse);
+  box-shadow: 0 4px 14px hsla(21, 48%, 36%, 0.25);
+}
+
+.btn-primary:hover {
+  background-color: var(--c-secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px hsla(21, 43%, 18%, 0.35);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--c-text-primary);
+  border: 2px solid var(--c-primary);
+}
+
+.btn-secondary:hover {
+  border-color: var(--c-secondary);
+  background-color: var(--c-surface-secondary);
+}
+
+/* Typography utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.desc-text {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--c-secondary);
+  max-width: 60ch;
+  margin-top: 1.5rem;
+  font-weight: 400;
+}
+
+/* Card Image Backgrounds */
+.bg-lost {
+  background: linear-gradient(45deg, var(--c-accent-alert), #ffb4a2);
+}
+
+.bg-found {
+  background: linear-gradient(45deg, var(--c-primary), #ffcdb2);
+}
+
+.bg-adopt {
+  background: linear-gradient(45deg, var(--c-accent-success), #b5e2cb);
+}
+
+/* Badge Classes */
+.badge-lost {
+  background-color: hsla(358, 70%, 66%, 0.15);
+  color: hsl(359, 61%, 41%);
+  /* #a7282b */
+}
+
+.badge-found {
+  background-color: hsla(23, 44%, 54%, 0.15);
+  color: hsl(25, 56%, 31%);
+  /* #7a4622 */
+}
+
+.badge-adopt {
+  background-color: hsla(155, 21%, 42%, 0.15);
+  color: hsl(152, 29%, 24%);
+  /* #2b4f3e */
+}

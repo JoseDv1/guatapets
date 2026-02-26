@@ -1,0 +1,105 @@
+---
+import Badge from "../atoms/Badge.astro";
+
+interface Props {
+    petCase: {
+        id: number;
+        type: string;
+        imageUrl: string | null;
+        name: string | null;
+        description: string;
+        location: string;
+    };
+}
+
+const { petCase } = Astro.props;
+---
+
+<a
+    href={`/casos/${petCase.id}`}
+    class={`case-card glass case-${petCase.type} animate-up`}
+>
+    {
+        petCase.imageUrl ? (
+            <div
+                class="case-image has-img"
+                style={`background-image: url('${petCase.imageUrl}');`}
+            />
+        ) : (
+            <div class={`case-image bg-${petCase.type}`} />
+        )
+    }
+
+    <div class="case-content">
+        <Badge type={petCase.type} />
+        <h3>{petCase.name || "Sin nombre"}</h3>
+        <p>
+            {
+                petCase.description.length > 80
+                    ? petCase.description.substring(0, 80) + "..."
+                    : petCase.description
+            }
+        </p>
+        <div class="case-meta">
+            <span>📍 {petCase.location}</span>
+        </div>
+    </div>
+</a>
+
+<style>
+    .case-card {
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        transition:
+            transform 0.3s ease,
+            box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .case-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(44, 26, 17, 0.1);
+    }
+
+    .case-image {
+        width: 100%;
+        aspect-ratio: 1;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    .case-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .case-content h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--c-text);
+    }
+
+    .case-content p {
+        color: var(--c-secondary);
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        flex-grow: 1;
+    }
+
+    .case-meta {
+        display: flex;
+        align-items: center;
+        color: var(--c-secondary);
+        font-size: 0.85rem;
+        font-weight: 500;
+        opacity: 0.8;
+    }
+</style>
