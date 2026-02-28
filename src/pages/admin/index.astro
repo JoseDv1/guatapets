@@ -19,18 +19,57 @@ if (sessionCookie && sessionCookie.value === import.meta.env.ADMIN_PASSWORD) {
 if (Astro.request.method === "POST") {
     const data = await Astro.request.formData();
     const password = data.get("password") as string;
+    const turnstileToken = data.get("cf-turnstile-response") as string;
 
-    if (password === import.meta.env.ADMIN_PASSWORD) {
-        Astro.cookies.set("admin_session", password, {
-            path: "/",
-            httpOnly: true,
-            secure: import.meta.env.PROD,
-            sameSite: "lax",
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-        });
-        return Astro.redirect("/admin");
+    const secretKey =
+        import.meta.env.TURNSTILE_SECRET_KEY ||
+        process.env.TURNSTILE_SECRET_KEY;
+
+    if (secretKey) {
+        if (!turnstileToken) {
+            error = "Por favor, completa el captcha de seguridad.";
+        } else {
+            const verifyResponse = await fetch(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(turnstileToken)}`,
+                },
+            );
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyData.success) {
+                error = "Captcha inválido. Por favor intenta de nuevo.";
+            } else if (password === import.meta.env.ADMIN_PASSWORD) {
+                Astro.cookies.set("admin_session", password, {
+                    path: "/",
+                    httpOnly: true,
+                    secure: import.meta.env.PROD,
+                    sameSite: "lax",
+                    maxAge: 60 * 60 * 24 * 7, // 1 week
+                });
+                return Astro.redirect("/admin");
+            } else {
+                error = "Contraseña incorrecta";
+            }
+        }
     } else {
-        error = "Contraseña incorrecta";
+        // Fallback for development if no turnstile secret is set
+        if (password === import.meta.env.ADMIN_PASSWORD) {
+            Astro.cookies.set("admin_session", password, {
+                path: "/",
+                httpOnly: true,
+                secure: import.meta.env.PROD,
+                sameSite: "lax",
+                maxAge: 60 * 60 * 24 * 7, // 1 week
+            });
+            return Astro.redirect("/admin");
+        } else {
+            error = "Contraseña incorrecta";
+        }
     }
 }
 
@@ -262,6 +301,18 @@ if (isAuthenticated) {
                                 />
                             </div>
 
+                            <div class="turnstile-container mb-6">
+                                <div
+                                    class="cf-turnstile"
+                                    data-sitekey={
+                                        import.meta.env
+                                            .PUBLIC_TURNSTILE_SITE_KEY ||
+                                        "1x00000000000000000000AA"
+                                    }
+                                    data-theme="light"
+                                />
+                            </div>
+
                             <button
                                 type="submit"
                                 class="btn btn-primary w-full"
@@ -276,6 +327,8 @@ if (isAuthenticated) {
     </main>
 </Layout>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer
+></script>
 <script is:inline>
     // Expose delete function to global scope
     window.deletePost = async function (id) {
@@ -358,6 +411,11 @@ if (isAuthenticated) {
         text-align: center;
         font-weight: 500;
         border: 1px solid hsla(358, 70%, 66%, 0.3);
+    }
+
+    .turnstile-container {
+        display: flex;
+        justify-content: center;
     }
 
     /* Dashboard Styles */

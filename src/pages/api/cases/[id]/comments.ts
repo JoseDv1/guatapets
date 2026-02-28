@@ -1,35 +1,6 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../../db';
 
-// Simple in-memory rate limiting store (for basic protection)
-// In production, use Redis or a proper rate limiting layer
-const rateLimitStore = new Map<string, { count: number, resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 5; // 5 comments per minute per IP
-
-function getClientIp(request: Request): string {
-    return request.headers.get('x-forwarded-for') ||
-        request.headers.get('cf-connecting-ip') ||
-        'unknown';
-}
-
-function checkRateLimit(ip: string): boolean {
-    const now = Date.now();
-    const store = rateLimitStore.get(ip);
-
-    if (!store || now > store.resetTime) {
-        rateLimitStore.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-        return true;
-    }
-
-    if (store.count >= MAX_REQUESTS_PER_WINDOW) {
-        return false;
-    }
-
-    store.count++;
-    return true;
-}
-
 const ANIMALS = [
     "Gato", "Perro", "León", "Tigre", "Oso", "Lobo", "Zorro", "Erizo", "Búho", "Águila",
     "Delfín", "Ballena", "Pardo", "Koala", "Panda", "Canguro", "Mapache", "Puma", "Jaguar", "Lince"
@@ -88,14 +59,31 @@ export const POST: APIRoute = async ({ request, params }) => {
             return new Response(JSON.stringify({ error: "ID inválido" }), { status: 400 });
         }
 
-        // Rate limiting check
-        const ip = getClientIp(request);
-        if (!checkRateLimit(ip)) {
-            return new Response(JSON.stringify({ error: "Has publicado demasiados comentarios. Intenta de nuevo en un minuto." }), { status: 429 });
-        }
-
         const body = await request.json();
         const content = body.content?.trim();
+        const turnstileToken = body.cfTurnstileResponse;
+
+        // Verify Turnstile Captcha
+        const secretKey = import.meta.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY;
+
+        if (secretKey) {
+            if (!turnstileToken) {
+                return new Response(JSON.stringify({ error: "Por favor, completa el captcha de seguridad." }), { status: 400 });
+            }
+
+            const verifyResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(turnstileToken)}`
+            });
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyData.success) {
+                return new Response(JSON.stringify({ error: "Captcha inválido. Por favor intenta recargando la página." }), { status: 400 });
+            }
+        } else {
+            console.warn("TURNSTILE_SECRET_KEY no configurado, omitiendo validación del captcha.");
+        }
 
         if (!content) {
             return new Response(JSON.stringify({ error: "El contenido del comentario es requerido" }), { status: 400 });

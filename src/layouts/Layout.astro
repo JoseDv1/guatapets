@@ -1,12 +1,15 @@
 ---
-import '../styles/global.css';
+import "../styles/global.css";
 
 interface Props {
 	title: string;
 	description?: string;
 }
 
-const { title, description = "Guatapets - Encuentra, adopta y reporta mascotas en Guatapé" } = Astro.props;
+const {
+	title,
+	description = "Guatapets - Encuentra, adopta y reporta mascotas en Guatapé",
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -15,7 +18,11 @@ const { title, description = "Guatapets - Encuentra, adopta y reporta mascotas e
 		<meta charset="UTF-8" />
 		<meta name="description" content={description} />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>"
+		/>
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
@@ -23,13 +30,13 @@ const { title, description = "Guatapets - Encuentra, adopta y reporta mascotas e
 		<slot />
 		<script>
 			// Initialize GSAP globally if needed for scroll triggers later
-			import { gsap } from 'gsap';
-			
+			import { gsap } from "gsap";
+
 			// Small transition for page load
 			gsap.from("body", {
 				opacity: 0,
 				duration: 0.8,
-				ease: "power2.inOut"
+				ease: "power2.inOut",
 			});
 		</script>
 	</body>

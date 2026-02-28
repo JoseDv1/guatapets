@@ -205,6 +205,17 @@ export const prerender = false;
                         <span class="error-text" id="error-contactEmail"></span>
                     </div>
 
+                    <div class="turnstile-container">
+                        <div
+                            class="cf-turnstile"
+                            data-sitekey={import.meta.env
+                                .PUBLIC_TURNSTILE_SITE_KEY ||
+                                "1x00000000000000000000AA"}
+                            data-theme="light"
+                        >
+                        </div>
+                    </div>
+
                     <div class="form-actions">
                         <a href="/" class="btn btn-secondary">Cancelar</a>
                         <button
@@ -443,8 +454,16 @@ export const prerender = false;
         background-color: var(--c-primary);
         color: var(--c-surface-primary);
     }
+
+    .turnstile-container {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+    }
 </style>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer
+></script>
 <script>
     import gsap from "gsap";
 
@@ -637,17 +656,33 @@ export const prerender = false;
                         }
                     }
                 } else {
-                    if (errorBanner) errorBanner.style.display = "block";
+                    if (errorBanner) {
+                        errorBanner.textContent =
+                            data.message ||
+                            "Ocurrió un error al procesar tu solicitud. Por favor, intenta un poco más tarde.";
+                        errorBanner.style.display = "block";
+                    }
                 }
             } catch (err) {
                 console.error(err);
-                if (errorBanner) errorBanner.style.display = "block";
+                if (errorBanner) {
+                    errorBanner.textContent =
+                        "Ocurrió un error de conexión. Por favor, intenta de nuevo.";
+                    errorBanner.style.display = "block";
+                }
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = "Publicar Caso";
                     submitBtn.style.opacity = "1";
                     submitBtn.style.cursor = "pointer";
+                }
+
+                // Reset Turnstile widget if form submission failed
+                // @ts-ignore
+                if (window.turnstile) {
+                    // @ts-ignore
+                    window.turnstile.reset();
                 }
             }
         });

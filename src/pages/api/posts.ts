@@ -3,6 +3,7 @@ import { z } from 'astro:schema';
 import { db } from '../../db';
 import { postTypeEnum, speciesEnum, genderEnum } from '../../db/schema';
 import { v2 as cloudinary } from 'cloudinary';
+import sharp from 'sharp';
 
 cloudinary.config({
     cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
@@ -39,6 +40,29 @@ export const POST: APIRoute = async ({ request }) => {
         const contactPhone = formData.get('contactPhone');
         const contactEmail = formData.get('contactEmail') || '';
         const image = formData.get('image');
+        const turnstileToken = formData.get('cf-turnstile-response');
+
+        // Verify Turnstile Captcha
+        const secretKey = import.meta.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY;
+
+        if (secretKey) {
+            if (!turnstileToken) {
+                return new Response(JSON.stringify({ success: false, message: "Por favor, completa el captcha de seguridad." }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+            }
+
+            const verifyResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(turnstileToken.toString())}`
+            });
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyData.success) {
+                return new Response(JSON.stringify({ success: false, message: "Captcha inválido. Por favor intenta recargando la página." }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+            }
+        } else {
+            console.warn("TURNSTILE_SECRET_KEY no configurado, omitiendo validación del captcha.");
+        }
 
         const parsed = createPostSchema.safeParse({
             type, species, name, description, breed, color, gender, location, contactName, contactPhone, contactEmail, image
@@ -88,8 +112,21 @@ export const POST: APIRoute = async ({ request }) => {
 async function uploadImageToCloudinary(image: File): Promise<string | null> {
     try {
         const arrayBuffer = await image.arrayBuffer();
-        const base64String = Buffer.from(arrayBuffer).toString('base64');
-        const dataURI = `data:${image.type};base64,${base64String}`;
+
+        // Optimize image with sharp before uploading
+        const optimizedBuffer = await sharp(Buffer.from(arrayBuffer))
+            .resize({
+                width: 1200,
+                height: 1200,
+                fit: 'inside',
+                withoutEnlargement: true
+            })
+            .webp({ quality: 80 })
+            .toBuffer();
+
+        const base64String = optimizedBuffer.toString('base64');
+        const dataURI = `data:image/webp;base64,${base64String}`;
+
         const uploadResponse = await cloudinary.uploader.upload(dataURI, {
             folder: 'guatapets',
             fetch_format: 'auto',

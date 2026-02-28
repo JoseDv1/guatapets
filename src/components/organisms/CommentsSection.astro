@@ -38,6 +38,18 @@ const { postId } = Astro.props;
                         <span id={`char-count-${postId}`}>0</span> / 500
                     </div>
                 </div>
+
+                <div class="turnstile-container">
+                    <div
+                        class="cf-turnstile"
+                        data-sitekey={import.meta.env
+                            .PUBLIC_TURNSTILE_SITE_KEY ||
+                            "1x00000000000000000000AA"}
+                        data-theme="light"
+                    >
+                    </div>
+                </div>
+
                 <button
                     type="submit"
                     class="submit-btn"
@@ -446,8 +458,16 @@ const { postId } = Astro.props;
             transform: translateX(-5px);
         }
     }
+
+    .turnstile-container {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: center;
+    }
 </style>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer
+></script>
 <script>
     function formatDate(dateString: string) {
         return new Intl.DateTimeFormat("es-CO", {
@@ -657,6 +677,11 @@ const { postId } = Astro.props;
 
             if (!content) return;
 
+            const formDataData = new FormData(form);
+            const cfTurnstileResponse = formDataData.get(
+                "cf-turnstile-response",
+            );
+
             // Loading state
             submitBtn.disabled = true;
             btnText?.classList.add("hidden");
@@ -667,7 +692,7 @@ const { postId } = Astro.props;
                 const response = await fetch(`/api/cases/${postId}/comments`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ content }),
+                    body: JSON.stringify({ content, cfTurnstileResponse }),
                 });
 
                 const data = await response.json();
@@ -707,6 +732,13 @@ const { postId } = Astro.props;
                 submitBtn.disabled = false;
                 btnText?.classList.remove("hidden");
                 btnLoader?.classList.add("hidden");
+
+                // Reset Turnstile widget after submission attempt
+                // @ts-ignore
+                if (window.turnstile) {
+                    // @ts-ignore
+                    window.turnstile.reset();
+                }
             }
         });
 

@@ -3,6 +3,7 @@ import { db } from '../../../../db';
 import { z } from 'astro:schema';
 import { postTypeEnum, speciesEnum, genderEnum, statusEnum, visibilityEnum } from '../../../../db/schema';
 import { v2 as cloudinary } from 'cloudinary';
+import sharp from 'sharp';
 
 // Authentication helper
 const checkAuth = (request: Request) => {
@@ -137,8 +138,21 @@ export const PUT: APIRoute = async ({ request, params }) => {
             
             try {
                 const arrayBuffer = await image.arrayBuffer();
-                const base64String = Buffer.from(arrayBuffer).toString('base64');
-                const dataURI = `data:${image.type};base64,${base64String}`;
+
+                // Optimize image with sharp before uploading
+                const optimizedBuffer = await sharp(Buffer.from(arrayBuffer))
+                    .resize({
+                        width: 1200,
+                        height: 1200,
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    })
+                    .webp({ quality: 80 })
+                    .toBuffer();
+
+                const base64String = optimizedBuffer.toString('base64');
+                const dataURI = `data:image/webp;base64,${base64String}`;
+
                 const uploadResponse = await cloudinary.uploader.upload(dataURI, {
                     folder: 'guatapets',
                     fetch_format: 'auto',

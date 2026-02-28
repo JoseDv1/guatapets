@@ -23,6 +23,18 @@ export default defineConfig({
                 access: 'secret',
                 context: 'server',
                 type: 'string',
+            },
+            PUBLIC_TURNSTILE_SITE_KEY: {
+                access: 'public',
+                context: 'client',
+                type: 'string',
+                optional: true,
+            },
+            TURNSTILE_SECRET_KEY: {
+                access: 'secret',
+                context: 'server',
+                type: 'string',
+                optional: true,
             }
         }
     }
