@@ -3,12 +3,14 @@ import { db } from "../../db";
 import StatItem from "../molecules/StatItem.astro";
 import reportIcon from "../../assets/icons/report.svg?raw";
 
+const totalesCount = await db.post.count();
+
 const reencontradosCount = await db.post.count({
   where: { type: "found" },
 });
 
 const adoptadosCount = await db.post.count({
-  where: { type: "adopt" },
+  where: { type: "adopted" },
 });
 ---
 
@@ -41,6 +43,8 @@ const adoptadosCount = await db.post.count({
       </div>
 
       <div class="hero-stats" id="hero-stats">
+        <StatItem count={totalesCount} label="Casos Totales" />
+        <div class="stat-divider"></div>
         <StatItem count={reencontradosCount} label="Reencontrados" />
         <div class="stat-divider"></div>
         <div class="stat-item">
