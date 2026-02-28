@@ -1,0 +1,149 @@
+---
+import { FILTER_OPTIONS } from "../../constants/filters";
+
+interface Props {
+    type?: string | null;
+    species?: string | null;
+}
+
+const { type, species } = Astro.props;
+---
+
+<aside class="cases-filter glass">
+    <div class="filter-header">
+        <h2 class="filter-title">Filtros</h2>
+        {
+            (type || species) && (
+                <a href="/casos" class="clear-filters">
+                    Limpiar
+                </a>
+            )
+        }
+    </div>
+
+    <form action="/casos" method="GET" class="filter-form">
+        <div class="filter-group">
+            <label for="type">Tipo de Caso</label>
+            <select name="type" id="type" class="filter-select">
+                {
+                    FILTER_OPTIONS.type.map((option) => (
+                        <option
+                            value={option.value}
+                            selected={type === option.value}
+                        >
+                            {option.label}
+                        </option>
+                    ))
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="species">Especie</label>
+            <select name="species" id="species" class="filter-select">
+                {
+                    FILTER_OPTIONS.species.map((option) => (
+                        <option
+                            value={option.value}
+                            selected={species === option.value}
+                        >
+                            {option.label}
+                        </option>
+                    ))
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full mt-4"
+            >Aplicar Filtros</button
+        >
+    </form>
+</aside>
+
+<style>
+    .cases-filter {
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        position: sticky;
+        top: calc(var(--nav-height) + 2rem);
+        height: fit-content;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--c-surface-secondary);
+    }
+
+    .filter-title {
+        font-size: 1.25rem;
+        color: var(--c-text);
+        margin: 0;
+    }
+
+    .clear-filters {
+        font-size: 0.85rem;
+        color: var(--c-secondary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .clear-filters:hover {
+        color: var(--c-accent-alert);
+        text-decoration: underline;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-group label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--c-text);
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--c-surface-secondary);
+        border-radius: var(--radius-sm);
+        background-color: var(--c-surface-elevated);
+        font-family: inherit;
+        font-size: 0.95rem;
+        color: var(--c-text);
+        transition:
+            border-color 0.3s ease,
+            box-shadow 0.3s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--c-primary);
+        box-shadow: 0 0 0 3px hsla(21, 48%, 36%, 0.2);
+    }
+
+    .w-full {
+        width: 100%;
+    }
+
+    .mt-4 {
+        margin-top: 1rem;
+    }
+</style>

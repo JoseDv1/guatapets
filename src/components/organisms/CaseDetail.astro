@@ -1,0 +1,575 @@
+---
+import type { Post } from "../../db/generated/client";
+import Badge from "../atoms/Badge.astro";
+
+interface Props {
+    post: Post;
+}
+
+const { post } = Astro.props;
+
+// Formatting date if needed
+const formattedDate = new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "medium",
+    timeStyle: "short",
+}).format(new Date(post.createdAt));
+
+const SPECIES_MAP: Record<string, string> = {
+    dog: "Perro",
+    cat: "Gato",
+    bird: "Ave",
+    other: "Otro",
+};
+
+const STATUS_MAP: Record<string, string> = {
+    active: "Activo",
+    resolved: "Resuelto",
+    closed: "Cerrado",
+};
+---
+
+<div class="case-detail-container">
+    <div class="case-image-wrapper glass">
+        {
+            post.imageUrl ? (
+                <img
+                    src={post.imageUrl}
+                    alt={post.name || "Mascota"}
+                    class="case-image"
+                />
+            ) : (
+                <div class={`case-image-placeholder bg-${post.type}`}>
+                    <span class="placeholder-icon">🐾</span>
+                </div>
+            )
+        }
+    </div>
+
+    <div class="case-info-wrapper glass">
+        <header class="case-header">
+            <div class="case-header-top">
+                <Badge type={post.type} />
+                <span class="case-date">{formattedDate}</span>
+            </div>
+            <h1 class="case-title">{post.name || "Sin nombre"}</h1>
+            <p class="case-location">📍 {post.location}</p>
+        </header>
+
+        <section class="case-details">
+            <h2 class="section-title">Detalles</h2>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Especie</span>
+                    <span class="detail-value"
+                        >{
+                            SPECIES_MAP[post.species] ||
+                                post.species ||
+                                "No especificada"
+                        }</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Raza</span>
+                    <span class="detail-value"
+                        >{post.breed || "No especificada"}</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Color</span>
+                    <span class="detail-value"
+                        >{post.color || "No especificado"}</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Género</span>
+                    <span class="detail-value"
+                        >{
+                            post.gender === "male"
+                                ? "Macho"
+                                : post.gender === "female"
+                                  ? "Hembra"
+                                  : "Desconocido"
+                        }</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Estado</span>
+                    <span class="detail-value status-badge"
+                        >{STATUS_MAP[post.status] || post.status}</span
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section class="case-description">
+            <h2 class="section-title">Descripción</h2>
+            <p class="description-text">{post.description}</p>
+        </section>
+
+        <section class="case-contact">
+            <h2 class="section-title">Contacto</h2>
+            <div class="contact-card">
+                <p class="contact-name">👤 {post.contactName}</p>
+                <p class="contact-phone">
+                    📞 <a href={`tel:${post.contactPhone}`} class="contact-link"
+                        >{post.contactPhone}</a
+                    >
+                </p>
+                {
+                    post.contactEmail && (
+                        <p class="contact-email">
+                            ✉️{" "}
+                            <a
+                                href={`mailto:${post.contactEmail}`}
+                                class="contact-link"
+                            >
+                                {post.contactEmail}
+                            </a>
+                        </p>
+                    )
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="image-modal" class="image-modal">
+    <button id="close-modal" class="close-modal-btn" aria-label="Cerrar vista"
+        >&times;</button
+    >
+    <div class="modal-content-wrapper">
+        <img id="modal-image" src="" alt="Vista completa de la mascota" />
+        <div class="zoom-controls">
+            <span class="zoom-hint">Usa la rueda del mouse para hacer zoom</span
+            >
+        </div>
+    </div>
+</div>
+
+<style>
+    .case-detail-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+        .case-detail-container {
+            grid-template-columns: 1fr 1.5fr;
+            align-items: start;
+        }
+    }
+
+    .case-image-wrapper {
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        aspect-ratio: 1;
+        position: sticky;
+        top: 6rem;
+    }
+
+    .case-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        cursor: zoom-in;
+        transition: transform 0.3s ease;
+    }
+
+    .case-image:hover {
+        transform: scale(1.02);
+    }
+
+    .case-image-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .placeholder-icon {
+        font-size: 5rem;
+        opacity: 0.5;
+    }
+
+    .case-info-wrapper {
+        padding: 2rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+    }
+
+    .case-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .case-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .case-date {
+        font-size: 0.85rem;
+        color: var(--c-secondary);
+    }
+
+    .case-title {
+        font-size: 2.2rem;
+        color: var(--c-text);
+        margin: 0.5rem 0;
+        line-height: 1.2;
+    }
+
+    .case-location {
+        color: var(--c-secondary);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        color: var(--c-text);
+        margin-bottom: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .case-details,
+    .case-description,
+    .case-contact {
+        margin-bottom: 2rem;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .detail-item {
+        background: rgba(255, 255, 255, 0.5);
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .detail-label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--c-secondary);
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    .detail-value {
+        display: block;
+        font-size: 1rem;
+        color: var(--c-text);
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .status-badge {
+        display: inline-block;
+        font-size: 0.8rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-full);
+        background: var(--c-surface-elevated);
+        border: 1px solid var(--c-border);
+    }
+
+    .description-text {
+        color: var(--c-text);
+        line-height: 1.7;
+        font-size: 1.05rem;
+    }
+
+    .contact-card {
+        background: var(--c-surface-elevated);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    }
+
+    .contact-card p {
+        margin: 0.75rem 0;
+        font-size: 1.1rem;
+        color: var(--c-text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .contact-card p:first-child {
+        margin-top: 0;
+        font-weight: 600;
+    }
+
+    .contact-card p:last-child {
+        margin-bottom: 0;
+    }
+
+    .contact-link {
+        color: var(--c-primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .contact-link:hover {
+        color: var(--c-primary-dark);
+        text-decoration: underline;
+    }
+
+    /* Modal Styles */
+    .image-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+            opacity 0.3s ease,
+            visibility 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .image-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .close-modal-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 10000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+
+    .close-modal-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+    }
+
+    .modal-content-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+        cursor: grab;
+    }
+
+    .modal-content-wrapper:active {
+        cursor: grabbing;
+    }
+
+    #modal-image {
+        max-width: 95vw;
+        max-height: 95vh;
+        object-fit: contain;
+        transform-origin: center center;
+        will-change: transform;
+        transition: transform 0.1s ease-out; /* Smooth snapping on zoom */
+    }
+
+    .zoom-controls {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+</style>
+
+<script>
+    // Astro scripts run deferred by default, meaning the DOM is already ready
+    const caseImage = document.querySelector(".case-image") as HTMLImageElement;
+    const modal = document.getElementById("image-modal");
+    const modalImage = document.getElementById(
+        "modal-image",
+    ) as HTMLImageElement;
+    const closeBtn = document.getElementById("close-modal");
+    const wrapper = document.querySelector(
+        ".modal-content-wrapper",
+    ) as HTMLElement;
+
+    if (caseImage && modal && modalImage && closeBtn && wrapper) {
+        let scale = 1;
+        let isDragging = false;
+        let startX = 0,
+            startY = 0,
+            translateX = 0,
+            translateY = 0;
+
+        const updateTransform = () => {
+            // Remove smooth transition if dragging so it follows cursor instantly
+            if (isDragging) {
+                modalImage.style.transition = "none";
+            } else {
+                modalImage.style.transition = "transform 0.1s ease-out";
+            }
+            modalImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        };
+
+        const resetZoom = () => {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        };
+
+        const openModal = () => {
+            modalImage.src = caseImage.src;
+            modal.classList.add("active");
+            document.body.style.overflow = "hidden";
+            resetZoom();
+        };
+
+        const closeModal = () => {
+            modal.classList.remove("active");
+            document.body.style.overflow = "";
+            // Reset zoom after transition finishes
+            setTimeout(resetZoom, 300);
+        };
+
+        // Event Listeners
+        caseImage.addEventListener("click", openModal);
+        closeBtn.addEventListener("click", closeModal);
+
+        // Close on background click
+        modal.addEventListener("click", (e) => {
+            if (e.target === wrapper) {
+                closeModal();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && modal.classList.contains("active")) {
+                closeModal();
+            }
+        });
+
+        // Wheel zoom functionality
+        wrapper.addEventListener(
+            "wheel",
+            (e) => {
+                e.preventDefault();
+                // Normalize scroll delta across browsers
+                const delta = Math.sign(e.deltaY) * -0.2;
+                const newScale = Math.min(Math.max(1, scale + delta), 6);
+
+                // If zooming out to minimum, reset position
+                if (newScale === 1) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+
+                scale = newScale;
+                updateTransform();
+            },
+            { passive: false },
+        );
+
+        // Mouse pan functionality
+        wrapper.addEventListener("mousedown", (e) => {
+            if (scale > 1) {
+                isDragging = true;
+                // Calculate starting position relative to current translation
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                wrapper.style.cursor = "grabbing";
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+            isDragging = false;
+            wrapper.style.cursor = "grab";
+            updateTransform(); // Re-enables smooth transition if needed
+        });
+
+        window.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        // Basic touch support for panning
+        wrapper.addEventListener(
+            "touchstart",
+            (e) => {
+                if (scale > 1 && e.touches.length === 1) {
+                    isDragging = true;
+                    startX = e.touches[0].clientX - translateX;
+                    startY = e.touches[0].clientY - translateY;
+                }
+            },
+            { passive: true },
+        );
+
+        wrapper.addEventListener("touchend", () => {
+            isDragging = false;
+            updateTransform();
+        });
+
+        window.addEventListener(
+            "touchmove",
+            (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                e.preventDefault();
+                translateX = e.touches[0].clientX - startX;
+                translateY = e.touches[0].clientY - startY;
+                updateTransform();
+            },
+            { passive: false },
+        );
+    }
+</script>
