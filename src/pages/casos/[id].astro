@@ -1,0 +1,110 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/organisms/Header.astro";
+import CaseDetail from "../../components/organisms/CaseDetail.astro";
+import { db } from "../../db";
+
+const { id } = Astro.params;
+
+// Parse ID to number
+const postId = id ? parseInt(id, 10) : null;
+
+// If invalid ID, early return/redirect
+if (!postId || isNaN(postId)) {
+    return Astro.redirect("/");
+}
+
+// Fetch the post from database
+const post = await db.post.findUnique({
+    where: {
+        id: postId,
+    },
+});
+
+// If no post found, redirect or show 404
+if (!post) {
+    return Astro.redirect("/");
+}
+
+const pageTitle = `${post.name || "Mascota"} - Guatapets`;
+const pageDescription = post.description.substring(0, 160);
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+    <Header />
+    <main class="case-detail-page">
+        <div class="container">
+            <div class="back-link-container">
+                <a href="/#casos-recientes" class="back-link">
+                    <span class="back-arrow">←</span> Volver a todos los casos
+                </a>
+            </div>
+
+            <CaseDetail post={post} />
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .case-detail-page {
+        padding-top: 6rem; /* Accound for fixed header */
+        padding-bottom: 4rem;
+        min-height: 100vh;
+        background-color: var(--c-surface);
+        background-image:
+            radial-gradient(
+                circle at 10% 20%,
+                rgba(var(--c-primary-rgb), 0.05) 0%,
+                transparent 40%
+            ),
+            radial-gradient(
+                circle at 90% 80%,
+                rgba(var(--c-accent-rgb), 0.05) 0%,
+                transparent 40%
+            );
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+
+    .back-link-container {
+        margin-bottom: 2rem;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--c-secondary);
+        text-decoration: none;
+        font-weight: 500;
+        transition:
+            color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .back-link:hover {
+        color: var(--c-primary);
+        transform: translateX(-4px);
+    }
+
+    .back-arrow {
+        font-size: 1.2rem;
+    }
+</style>
+
+<script>
+    import gsap from "gsap";
+
+    // Simple fade-in animation for the detail component
+    gsap.from(".case-detail-container", {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power2.out",
+        delay: 0.2,
+    });
+</script>

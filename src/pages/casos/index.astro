@@ -1,0 +1,217 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/organisms/Header.astro";
+import CasesFilter from "../../components/organisms/CasesFilter.astro";
+import CaseCard from "../../components/molecules/CaseCard.astro";
+import { db } from "../../db";
+import type { PostWhereInput } from "../../db/generated/models";
+
+export const prerender = false;
+
+// Extract search params
+const typeParam = Astro.url.searchParams.get("type");
+const speciesParam = Astro.url.searchParams.get("species");
+
+// Build Where Clause dynamically
+const whereClause: PostWhereInput = {
+    status: "active",
+    visibility: "public",
+};
+
+if (typeParam) {
+    whereClause.type = typeParam;
+}
+
+if (speciesParam) {
+    whereClause.species = speciesParam;
+}
+
+// statusParam is intentionally ignored to enforce active-only viewing
+
+// Fetch cases
+const cases = await db.post.findMany({
+    where: whereClause,
+    orderBy: {
+        createdAt: "desc",
+    },
+});
+
+const activeFiltersCount = [typeParam, speciesParam].filter(Boolean).length;
+---
+
+<Layout
+    title="Casos de Mascotas | Guatapets"
+    description="Explora los casos de mascotas perdidas, encontradas y en adopción en Guatapé."
+>
+    <Header />
+    <main class="page-container">
+        <div class="container">
+            <div class="page-header text-center">
+                <h1 class="page-title">Casos de Mascotas</h1>
+                <p class="page-desc">
+                    Explora y filtra los casos reportados en nuestra comunidad.
+                    {
+                        activeFiltersCount > 0 && (
+                            <span>
+                                (Mostrando {cases.length} resultados con
+                                filtros)
+                            </span>
+                        )
+                    }
+                </p>
+            </div>
+
+            <div class="layout-grid">
+                <aside class="sidebar animate-up">
+                    <CasesFilter type={typeParam} species={speciesParam} />
+                </aside>
+
+                <div class="main-content">
+                    {
+                        cases.length === 0 ? (
+                            <div
+                                class="empty-state glass animate-up"
+                                style="animation-delay: 0.1s"
+                            >
+                                <div class="empty-icon">🔍</div>
+                                <h2>No encontramos casos</h2>
+                                <p>
+                                    No hay casos que coincidan con los filtros
+                                    seleccionados.
+                                </p>
+                                <a href="/casos" class="btn btn-secondary mt-4">
+                                    Limpiar Filtros
+                                </a>
+                            </div>
+                        ) : (
+                            <div class="cases-grid">
+                                {cases.map((petCase, index) => (
+                                    <div
+                                        class="animate-up"
+                                        style={`animation-delay: ${index * 0.1}s`}
+                                    >
+                                        <CaseCard petCase={petCase} />
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .page-container {
+        padding-top: calc(var(--nav-height) + 2rem);
+        padding-bottom: 4rem;
+        min-height: 100vh;
+        background-color: var(--c-surface);
+        background-image:
+            radial-gradient(
+                circle at 10% 20%,
+                rgba(var(--c-primary-rgb), 0.05) 0%,
+                transparent 40%
+            ),
+            radial-gradient(
+                circle at 90% 80%,
+                rgba(var(--c-accent-rgb), 0.05) 0%,
+                transparent 40%
+            );
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 3rem;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        color: var(--c-text);
+        margin-bottom: 0.5rem;
+    }
+
+    .page-desc {
+        color: var(--c-secondary);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    @media (min-width: 768px) {
+        .layout-grid {
+            grid-template-columns: 300px 1fr;
+            gap: 3rem;
+        }
+    }
+
+    .cases-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        border-radius: var(--radius-lg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+
+    .empty-state h2 {
+        color: var(--c-text);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: var(--c-secondary);
+    }
+
+    .animate-up {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    .mt-4 {
+        margin-top: 1rem;
+    }
+</style>
+
+<script>
+    import gsap from "gsap";
+
+    // Standard stagger animation
+    gsap.to(".animate-up", {
+        y: 0,
+        opacity: 1,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: "power3.out",
+    });
+</script>
