@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import Header from "../../components/organisms/Header.astro";
 import CaseDetail from "../../components/organisms/CaseDetail.astro";
+import CommentsSection from "../../components/organisms/CommentsSection.astro";
 import { db } from "../../db";
 
 const { id } = Astro.params;
@@ -41,6 +42,7 @@ const pageDescription = post.description.substring(0, 160);
             </div>
 
             <CaseDetail post={post} />
+            <CommentsSection postId={post.id} />
         </div>
     </main>
 </Layout>

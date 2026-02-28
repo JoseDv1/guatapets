@@ -9,4 +9,5 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Post.ts'
+export type * from './models/Comment.ts'
 export type * from './commonInputTypes.ts'

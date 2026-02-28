@@ -8,23 +8,35 @@ datasource db {
 }
 
 model Post {
-    id           Int      @id @default(autoincrement())
+    id           Int       @id @default(autoincrement())
     type         String
     species      String
     name         String?
     description  String
     breed        String?
     color        String?
-    gender       String?  @default("unknown")
-    imageUrl     String?  @map("image_url")
+    gender       String?   @default("unknown")
+    imageUrl     String?   @map("image_url")
     location     String
-    status       String   @default("active")
-    contactName  String   @map("contact_name")
-    contactPhone String   @map("contact_phone")
-    contactEmail String?  @map("contact_email")
-    visibility   String   @default("public")
-    createdAt    DateTime @default(now()) @map("created_at")
-    updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+    status       String    @default("active")
+    contactName  String    @map("contact_name")
+    contactPhone String    @map("contact_phone")
+    contactEmail String?   @map("contact_email")
+    visibility   String    @default("public")
+    createdAt    DateTime  @default(now()) @map("created_at")
+    updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+    comments     Comment[]
 
     @@map("posts")
+}
+
+model Comment {
+    id         Int      @id @default(autoincrement())
+    postId     Int      @map("post_id")
+    post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+    content    String
+    authorName String   @map("author_name")
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    @@map("comments")
 }
