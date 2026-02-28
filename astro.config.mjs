@@ -35,6 +35,18 @@ export default defineConfig({
                 context: 'server',
                 type: 'string',
                 optional: true,
+            },
+            TURSO_DATABASE_URL: {
+                access: 'secret',
+                context: 'server',
+                type: 'string',
+                optional: true,
+            },
+            TURSO_AUTH_TOKEN: {
+                access: 'secret',
+                context: 'server',
+                type: 'string',
+                optional: true,
             }
         }
     }
