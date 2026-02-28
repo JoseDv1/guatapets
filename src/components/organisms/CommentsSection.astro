@@ -32,7 +32,11 @@ const { postId } = Astro.props;
                         rows="4"
                         placeholder="Escribe tu mensaje aquí..."
                         required
+                        maxlength="500"
                         class="comment-input"></textarea>
+                    <div class="char-counter">
+                        <span id={`char-count-${postId}`}>0</span> / 500
+                    </div>
                 </div>
                 <button
                     type="submit"
@@ -298,6 +302,49 @@ const { postId } = Astro.props;
             0 4px 15px rgba(0, 0, 0, 0.02);
     }
 
+    .char-counter {
+        text-align: right;
+        font-size: 0.8rem;
+        color: var(--c-secondary);
+        margin-top: 0.5rem;
+        position: absolute;
+        bottom: -1.5rem;
+        right: 0.5rem;
+    }
+    .form-group {
+        margin-bottom: 2rem; /* Increased to accommodate counter */
+    }
+
+    .load-more-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .load-more-btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--radius-full);
+        background: rgba(var(--c-primary-rgb), 0.1);
+        color: var(--c-primary);
+        border: 1px solid rgba(var(--c-primary-rgb), 0.2);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .load-more-btn:hover {
+        background: rgba(var(--c-primary-rgb), 0.2);
+        transform: translateY(-1px);
+    }
+
+    .load-more-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
     .submit-btn {
         width: 100%;
         padding: 0.85rem 1.5rem;
@@ -438,8 +485,18 @@ const { postId } = Astro.props;
         return animalEmojis[firstWord] || "🐾";
     }
 
+    function escapeHTML(str: string) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     function createCommentElement(comment: any) {
         const emoji = getAnimalEmoji(comment.authorName);
+        const safeContent = escapeHTML(comment.content);
         return `
             <div class="comment-item">
                 <div class="comment-header">
@@ -449,7 +506,7 @@ const { postId } = Astro.props;
                     </span>
                     <span class="comment-date">${formatDate(comment.createdAt)}</span>
                 </div>
-                <div class="comment-content">${comment.content}</div>
+                <div class="comment-content">${safeContent}</div>
             </div>
         `;
     }
@@ -476,27 +533,119 @@ const { postId } = Astro.props;
 
         if (!listContainer || !form) return;
 
+        // Character counter
+        const contentInput = document.getElementById(
+            `comment-content-${postId}`,
+        ) as HTMLTextAreaElement;
+        const charCount = document.getElementById(`char-count-${postId}`);
+
+        if (contentInput && charCount) {
+            contentInput.addEventListener("input", () => {
+                const currentLength = contentInput.value.length;
+                charCount.textContent = currentLength.toString();
+                if (currentLength >= 500) {
+                    charCount.style.color = "rgb(220, 38, 38)"; // Red
+                } else {
+                    charCount.style.color = ""; // Reset
+                }
+            });
+        }
+
+        let cursor: number | null = null;
+        let isLoadingMore = false;
+
         // Fetch comments
-        async function fetchComments() {
+        // Fetch comments
+        async function fetchComments(isLoadMore = false) {
+            if (isLoadMore) {
+                isLoadingMore = true;
+                const loadMoreBtn = document.getElementById(
+                    `load-more-${postId}`,
+                ) as HTMLButtonElement;
+                if (loadMoreBtn) loadMoreBtn.disabled = true;
+            }
+
             try {
-                const response = await fetch(`/api/cases/${postId}/comments`);
+                let url = `/api/cases/${postId}/comments`;
+                if (cursor) {
+                    url += `?cursor=${cursor}`;
+                }
+
+                const response = await fetch(url);
                 if (!response.ok)
                     throw new Error("Network response was not ok");
 
                 const data = await response.json();
 
+                // Remove loading or empty states on first load
+                if (!isLoadMore) {
+                    listContainer!.innerHTML = "";
+                }
+
+                // Remove existing load more button if it exists
+                const existingLoadMore = document.querySelector(
+                    `.load-more-container[data-post="${postId}"]`,
+                );
+                if (existingLoadMore) existingLoadMore.remove();
+
                 if (data.comments && data.comments.length > 0) {
-                    listContainer!.innerHTML = data.comments
+                    const commentsHtml = data.comments
                         .map(createCommentElement)
                         .join("");
-                } else {
+
+                    if (isLoadMore) {
+                        listContainer!.insertAdjacentHTML(
+                            "beforeend",
+                            commentsHtml,
+                        );
+                    } else {
+                        listContainer!.innerHTML = commentsHtml;
+                    }
+
+                    // Store next cursor
+                    cursor = data.nextCursor;
+
+                    // Add load more button if there's a next cursor
+                    if (cursor) {
+                        const loadMoreHtml = `
+                            <div class="load-more-container" data-post="${postId}">
+                                <button id="load-more-${postId}" class="load-more-btn">
+                                    Cargar más comentarios
+                                </button>
+                            </div>
+                        `;
+                        listContainer!.insertAdjacentHTML(
+                            "afterend",
+                            loadMoreHtml,
+                        );
+
+                        // Add event listener to new button
+                        setTimeout(() => {
+                            const btn = document.getElementById(
+                                `load-more-${postId}`,
+                            );
+                            if (btn) {
+                                btn.addEventListener("click", () =>
+                                    fetchComments(true),
+                                );
+                            }
+                        }, 0);
+                    }
+                } else if (
+                    !isLoadMore &&
+                    (!data.comments || data.comments.length === 0)
+                ) {
                     listContainer!.innerHTML =
                         '<div class="empty-state">Aún no hay comentarios. ¡Sé el primero!</div>';
                 }
             } catch (error) {
                 console.error("Error fetching comments:", error);
-                listContainer!.innerHTML =
-                    '<div class="error-message">Error al cargar los comentarios.</div>';
+                if (!isLoadMore) {
+                    listContainer!.innerHTML =
+                        '<div class="error-message">Error al cargar los comentarios.</div>';
+                }
+            } finally {
+                isLoadingMore = false;
             }
         }
 
@@ -504,9 +653,6 @@ const { postId } = Astro.props;
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const contentInput = document.getElementById(
-                `comment-content-${postId}`,
-            ) as HTMLTextAreaElement;
             const content = contentInput.value.trim();
 
             if (!content) return;
@@ -544,6 +690,12 @@ const { postId } = Astro.props;
                     "afterbegin",
                     createCommentElement(data.comment),
                 );
+
+                // Reset character count
+                if (charCount) {
+                    charCount.textContent = "0";
+                    charCount.style.color = "";
+                }
             } catch (error: any) {
                 console.error("Submit error:", error);
                 if (errorContainer) {
