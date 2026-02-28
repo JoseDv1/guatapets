@@ -4,6 +4,10 @@ import CaseCard from "../molecules/CaseCard.astro";
 
 // Fetch the most recent 6 posts
 const recentCases = await db.post.findMany({
+    where: {
+        status: "active",
+        visibility: "public",
+    },
     orderBy: {
         createdAt: "desc",
     },
