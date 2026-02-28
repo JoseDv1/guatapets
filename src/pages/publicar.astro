@@ -1,6 +1,13 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/organisms/Header.astro";
+import CaseCard from "../components/molecules/CaseCard.astro";
+import { postTypeEnum, speciesEnum, genderEnum } from "../db/schema";
+import {
+    TYPE_LABELS,
+    SPECIES_LABELS,
+    GENDER_LABELS,
+} from "../constants/filters";
 
 export const prerender = false;
 ---
@@ -8,7 +15,7 @@ export const prerender = false;
 <Layout title="Publicar Caso | Guatapets">
     <Header />
     <main class="page-container">
-        <div class="container">
+        <div class="container publishing-layout">
             <div class="form-wrapper glass animate-up">
                 <h1 class="form-title">Publicar un Caso</h1>
                 <p class="form-desc">
@@ -36,10 +43,15 @@ export const prerender = false;
                             <label for="type">Tipo de Caso *</label>
                             <select id="type" name="type" required>
                                 <option value="">Selecciona...</option>
-                                <option value="lost">Mascota Perdida</option>
-                                <option value="found">Mascota Encontrada</option
-                                >
-                                <option value="adopt">Dar en Adopción</option>
+                                {
+                                    postTypeEnum
+                                        .filter((t) => t !== "adopted")
+                                        .map((type) => (
+                                            <option value={type}>
+                                                {TYPE_LABELS[type]}
+                                            </option>
+                                        ))
+                                }
                             </select>
                             <span class="error-text" id="error-type"></span>
                         </div>
@@ -48,10 +60,13 @@ export const prerender = false;
                             <label for="species">Especie *</label>
                             <select id="species" name="species" required>
                                 <option value="">Selecciona...</option>
-                                <option value="dog">Perro</option>
-                                <option value="cat">Gato</option>
-                                <option value="bird">Ave</option>
-                                <option value="other">Otro</option>
+                                {
+                                    speciesEnum.map((species) => (
+                                        <option value={species}>
+                                            {SPECIES_LABELS[species]}
+                                        </option>
+                                    ))
+                                }
                             </select>
                             <span class="error-text" id="error-species"></span>
                         </div>
@@ -71,9 +86,14 @@ export const prerender = false;
                         <div class="form-group">
                             <label for="gender">Género</label>
                             <select id="gender" name="gender">
-                                <option value="unknown">Desconocido</option>
-                                <option value="male">Macho</option>
-                                <option value="female">Hembra</option>
+                                <option value="">Selecciona...</option>
+                                {
+                                    genderEnum.map((gender) => (
+                                        <option value={gender}>
+                                            {GENDER_LABELS[gender]}
+                                        </option>
+                                    ))
+                                }
                             </select>
                         </div>
                     </div>
@@ -195,6 +215,31 @@ export const prerender = false;
                     </div>
                 </form>
             </div>
+
+            <!-- Previsualización -->
+            <aside
+                class="preview-wrapper animate-up"
+                style="animation-delay: 0.2s"
+            >
+                <div class="preview-stickybox">
+                    <h2 class="preview-title">Vista Previa</h2>
+                    <p class="preview-desc">Así se verá tu caso publicado.</p>
+
+                    <div id="live-preview-container">
+                        <CaseCard
+                            petCase={{
+                                id: 0,
+                                type: "lost",
+                                imageUrl: null,
+                                name: "Nombre de la Mascota",
+                                description:
+                                    "Aquí aparecerá la descripción detallada...",
+                                location: "Ubicación / Sector",
+                            }}
+                        />
+                    </div>
+                </div>
+            </aside>
         </div>
     </main>
 </Layout>
@@ -206,13 +251,59 @@ export const prerender = false;
         min-height: 100vh;
         background-color: var(--c-surface-primary);
     }
-
-    .form-wrapper {
+    .publishing-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
         max-width: 800px;
         margin: 0 auto;
+    }
+
+    @media (min-width: 992px) {
+        .publishing-layout {
+            grid-template-columns: 1fr 400px;
+            align-items: start;
+            max-width: none;
+        }
+    }
+
+    .form-wrapper {
         padding: 2.5rem;
         border-radius: var(--radius-lg);
         box-shadow: 0 10px 30px rgba(44, 26, 17, 0.05);
+    }
+
+    .preview-wrapper {
+        display: block;
+        margin-top: 1rem;
+        padding: 0 1.5rem; /* added padding for mobile */
+    }
+
+    @media (min-width: 992px) {
+        .preview-wrapper {
+            margin-top: 0;
+            padding: 0; /* remove extra padding on desktop */
+        }
+        .preview-stickybox {
+            position: sticky;
+            top: calc(var(--nav-height) + 2rem);
+        }
+    }
+
+    .preview-title {
+        font-size: 1.5rem;
+        color: var(--c-text);
+        margin-bottom: 0.25rem;
+    }
+
+    .preview-desc {
+        color: var(--c-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #live-preview-container {
+        pointer-events: none; /* Disable clicking on the preview */
     }
 
     .form-title {
@@ -370,6 +461,143 @@ export const prerender = false;
     const submitBtn = document.getElementById(
         "submit-btn",
     ) as HTMLButtonElement;
+
+    // Preview Elements
+    const previewContainer = document.getElementById("live-preview-container");
+
+    // Input Elements
+    const typeInput = document.getElementById("type") as HTMLSelectElement;
+    const nameInput = document.getElementById("name") as HTMLInputElement;
+    const descriptionInput = document.getElementById(
+        "description",
+    ) as HTMLTextAreaElement;
+    const locationInput = document.getElementById(
+        "location",
+    ) as HTMLInputElement;
+    const imageInput = document.getElementById("image") as HTMLInputElement;
+
+    // Update functions
+    const updatePreview = () => {
+        if (!previewContainer) return;
+
+        // Card root element
+        const cardEl = previewContainer.querySelector(
+            ".case-card",
+        ) as HTMLElement;
+        const bgLayer = previewContainer.querySelector(
+            ".case-image",
+        ) as HTMLElement;
+        const badgeEl = previewContainer.querySelector(
+            ".case-badge",
+        ) as HTMLElement;
+        const titleEl = previewContainer.querySelector("h3") as HTMLElement;
+        const descEl = previewContainer.querySelector("p") as HTMLElement;
+        const locEl = previewContainer.querySelector(
+            ".case-meta span",
+        ) as HTMLElement;
+
+        if (cardEl && typeInput) {
+            // Remove previous type classes
+            cardEl.classList.forEach((className) => {
+                if (className.startsWith("case-")) {
+                    if (
+                        className !== "case-card" &&
+                        className !== "case-content" &&
+                        className !== "case-image" &&
+                        className !== "case-meta" &&
+                        className !== "case-badge"
+                    ) {
+                        cardEl.classList.remove(className);
+                    }
+                }
+            });
+            // Add new type class
+            const currentType = typeInput.value || "lost";
+            cardEl.classList.add(`case-${currentType}`);
+
+            if (bgLayer && !bgLayer.classList.contains("has-img")) {
+                bgLayer.className = `case-image bg-${currentType}`;
+            }
+
+            if (badgeEl) {
+                badgeEl.className = `case-badge badge-${currentType}`;
+                let badgeText = "Desconocido";
+                if (currentType === "lost") badgeText = "Perdido";
+                if (currentType === "found") badgeText = "Encontrado";
+                if (currentType === "adoption") badgeText = "En Adopción";
+                if (currentType === "adopted") badgeText = "Adoptado";
+                badgeEl.textContent = badgeText;
+            }
+        }
+
+        if (titleEl && nameInput) {
+            titleEl.textContent = nameInput.value.trim() || "Sin nombre";
+        }
+
+        if (descEl && descriptionInput) {
+            const descValue =
+                descriptionInput.value.trim() ||
+                "Aquí aparecerá la descripción detallada...";
+            descEl.textContent =
+                descValue.length > 80
+                    ? descValue.substring(0, 80) + "..."
+                    : descValue;
+        }
+
+        if (locEl && locationInput) {
+            locEl.textContent = `📍 ${locationInput.value.trim() || "Ubicación / Sector"}`;
+        }
+    };
+
+    // Attach listeners
+    if (form) {
+        // Listen to regular inputs
+        ["input", "change"].forEach((evt) => {
+            form.addEventListener(evt, (e) => {
+                const target = e.target as HTMLElement;
+                if (target && target.id !== "image") {
+                    updatePreview();
+                }
+            });
+        });
+
+        // Specific listener for Image Input (FileReader)
+        if (imageInput) {
+            imageInput.addEventListener("change", (e) => {
+                const target = e.target as HTMLInputElement;
+                if (target.files && target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        if (previewContainer && e.target && e.target.result) {
+                            const bgLayer = previewContainer.querySelector(
+                                ".case-image",
+                            ) as HTMLElement;
+                            if (bgLayer) {
+                                bgLayer.className = "case-image has-img";
+                                bgLayer.style.backgroundImage = `url('${e.target.result}')`;
+                            }
+                        }
+                    };
+                    reader.readAsDataURL(target.files[0]);
+                } else {
+                    // Reset image if user cancels selection
+                    if (previewContainer) {
+                        const bgLayer = previewContainer.querySelector(
+                            ".case-image",
+                        ) as HTMLElement;
+                        const currentType = typeInput.value || "lost";
+                        if (bgLayer) {
+                            bgLayer.className = `case-image bg-${currentType}`;
+                            bgLayer.style.backgroundImage = "none";
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initial setup
+        updatePreview();
+    } // <-- Close the attach listeners block
 
     if (form) {
         form.addEventListener("submit", async (e) => {
