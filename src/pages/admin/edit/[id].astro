@@ -1,0 +1,520 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Header from "../../../components/organisms/Header.astro";
+import { db } from "../../../db";
+import { postTypeEnum, speciesEnum, genderEnum, statusEnum, visibilityEnum } from "../../../db/schema";
+import { TYPE_LABELS, SPECIES_LABELS, GENDER_LABELS, STATUS_LABELS } from "../../../constants/filters";
+
+export const prerender = false;
+
+// Check auth
+const sessionCookie = Astro.cookies.get("admin_session");
+if (!sessionCookie || sessionCookie.value !== import.meta.env.ADMIN_PASSWORD) {
+  return Astro.redirect("/admin");
+}
+
+const { id } = Astro.params;
+const postId = parseInt(id as string);
+
+if (isNaN(postId)) {
+  return Astro.redirect("/admin");
+}
+
+// Fetch current post
+const post = await db.post.findUnique({
+  where: { id: postId }
+});
+
+if (!post) {
+  return Astro.redirect("/admin");
+}
+---
+
+<Layout title={`Editar Caso #${post.id} | Admin`}>
+  <Header />
+  
+  <main class="page-container">
+    <div class="container publishing-layout">
+      <div class="form-wrapper glass animate-up">
+        <div class="header-actions">
+          <a href="/admin" class="btn btn-secondary btn-sm back-link">
+            &larr; Volver al Panel
+          </a>
+        </div>
+        
+        <h1 class="form-title">Editar Caso #{post.id}</h1>
+        <p class="form-desc">
+          Modifica los datos del caso reportado. Los campos vacíos opcionales se ignorarán si no se completan.
+        </p>
+
+        <!-- Error/Success Banner -->
+        <div id="alert-banner" class="alert-banner" style="display: none;"></div>
+
+        <form id="edit-form" class="report-form" enctype="multipart/form-data">
+          <!-- Administrator Status Options -->
+          <div class="admin-section">
+            <h3 class="section-divider">Estado Administrativo</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="status">Estado del Caso</label>
+                <select id="status" name="status" class="admin-input">
+                  {statusEnum.map(s => (
+                    <option value={s} selected={post.status === s}>
+                      {STATUS_LABELS[s] || s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="visibility">Visibilidad</label>
+                <select id="visibility" name="visibility" class="admin-input">
+                  {visibilityEnum.map(v => (
+                    <option value={v} selected={post.visibility === v}>
+                      {v === 'public' ? 'Público' : 'Oculto'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="section-divider">Datos de la Mascota</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="type">Tipo de Caso *</label>
+              <select id="type" name="type" required>
+                {postTypeEnum.map((type) => (
+                  <option value={type} selected={post.type === type}>
+                    {TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+              <span class="error-text" id="error-type"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="species">Especie *</label>
+              <select id="species" name="species" required>
+                {speciesEnum.map((species) => (
+                  <option value={species} selected={post.species === species}>
+                    {SPECIES_LABELS[species]}
+                  </option>
+                ))}
+              </select>
+              <span class="error-text" id="error-species"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">Nombre de la Mascota</label>
+              <input type="text" id="name" name="name" value={post.name || ""} />
+            </div>
+
+            <div class="form-group">
+              <label for="gender">Género</label>
+              <select id="gender" name="gender">
+                {genderEnum.map((gender) => (
+                  <option value={gender} selected={post.gender === gender}>
+                    {GENDER_LABELS[gender]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="breed">Raza</label>
+              <input type="text" id="breed" name="breed" value={post.breed || ""} />
+            </div>
+
+            <div class="form-group">
+              <label for="color">Color</label>
+              <input type="text" id="color" name="color" value={post.color || ""} />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="location">Ubicación / Sector *</label>
+            <input type="text" id="location" name="location" value={post.location} required />
+            <span class="error-text" id="error-location"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Descripción Detallada *</label>
+            <textarea id="description" name="description" rows="4" required>{post.description}</textarea>
+            <span class="error-text" id="error-description"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Imagen Actual</label>
+            {post.imageUrl ? (
+              <div class="current-image">
+                <img src={post.imageUrl} alt="Mascota" />
+              </div>
+            ) : (
+              <p class="text-secondary text-sm">No hay imagen anterior registrada.</p>
+            )}
+            
+            <label for="image" class="mt-4">Actualizar Imagen (Opcional)</label>
+            <input type="file" id="image" name="image" accept="image/*" class="file-input" />
+            <p class="help-text">Si seleccionas una nueva imagen, reemplazará la anterior.</p>
+          </div>
+
+          <h3 class="section-divider">Datos de Contacto</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="contactName">Nombre de Contacto *</label>
+              <input type="text" id="contactName" name="contactName" value={post.contactName} required />
+              <span class="error-text" id="error-contactName"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="contactPhone">Teléfono *</label>
+              <input type="tel" id="contactPhone" name="contactPhone" value={post.contactPhone} required />
+              <span class="error-text" id="error-contactPhone"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="contactEmail">Correo Electrónico</label>
+            <input type="email" id="contactEmail" name="contactEmail" value={post.contactEmail || ""} />
+            <span class="error-text" id="error-contactEmail"></span>
+          </div>
+
+          <div class="form-actions space-between">
+            <button type="button" class="btn btn-secondary text-danger" id="delete-btn">
+              Eliminar Caso
+            </button>
+            <div class="action-group">
+              <a href="/admin" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="submit-btn" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline define:vars={{ postId: post.id }}>
+  const form = document.getElementById("edit-form");
+  const alertBanner = document.getElementById("alert-banner");
+  const submitBtn = document.getElementById("submit-btn");
+  const deleteBtn = document.getElementById("delete-btn");
+
+  const showAlert = (msg, isError = true) => {
+    alertBanner.textContent = msg;
+    alertBanner.style.display = "block";
+    if (isError) {
+      alertBanner.className = "alert-banner error";
+    } else {
+      alertBanner.className = "alert-banner success";
+    }
+  };
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      alertBanner.style.display = "none";
+      document.querySelectorAll(".error-text").forEach(el => el.textContent = "");
+
+      const formData = new FormData(form);
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Guardando...";
+
+      try {
+        const res = await fetch(`/api/admin/posts/${postId}`, {
+          method: "PUT",
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showAlert("Caso actualizado correctamente.", false);
+          setTimeout(() => {
+            window.location.href = "/admin";
+          }, 1500);
+        } else if (data.errors) {
+          for (const key in data.errors) {
+            const errorEl = document.getElementById(`error-${key}`);
+            if (errorEl) {
+              errorEl.textContent = data.errors[key].join(", ");
+            }
+          }
+        } else {
+          showAlert(data.message || "Ocurrió un error al guardar los cambios.");
+        }
+      } catch (err) {
+        console.error(err);
+        showAlert("Error de conexión al guardar los datos.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Guardar Cambios";
+      }
+    });
+  }
+
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", async () => {
+      if (!confirm('¿Estás seguro de que deseas eliminar este caso? Esta acción no se puede deshacer.')) {
+        return;
+      }
+      
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Eliminando...";
+      
+      try {
+        const res = await fetch(`/api/admin/posts/${postId}`, {
+          method: "DELETE"
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = "/admin";
+        } else {
+          showAlert(data.message || "No se pudo eliminar el caso.");
+          deleteBtn.disabled = false;
+          deleteBtn.textContent = "Eliminar Caso";
+        }
+      } catch (err) {
+        showAlert("Error de conexión al eliminar.");
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Eliminar Caso";
+      }
+    });
+  }
+</script>
+
+<style>
+  .page-container {
+    padding-top: calc(var(--nav-height) + 2rem);
+    padding-bottom: 4rem;
+    min-height: 100vh;
+    background-color: var(--c-surface-primary);
+  }
+
+  .publishing-layout {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .form-wrapper {
+    padding: 2.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(0,0,0, 0.05);
+  }
+
+  .header-actions {
+    margin-bottom: 2rem;
+  }
+  
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--c-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .back-link:hover {
+    color: var(--c-text);
+  }
+
+  .form-title {
+    font-size: 2.5rem;
+    color: var(--c-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-desc {
+    color: var(--c-secondary);
+    margin-bottom: 2.5rem;
+  }
+
+  .admin-section {
+    background-color: hsla(210, 60%, 55%, 0.05);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    border: 1px dashed hsla(210, 60%, 55%, 0.3);
+    margin-bottom: 2rem;
+  }
+  
+  .admin-section .section-divider {
+    margin-top: 0;
+    font-size: 1.25rem;
+    border-bottom: none;
+    color: #3b82f6;
+  }
+  
+  .admin-input {
+    border-color: hsla(210, 60%, 55%, 0.3) !important;
+  }
+
+  .report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--c-text);
+  }
+
+  input[type="text"],
+  input[type="tel"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--c-surface-secondary);
+    border-radius: var(--radius-sm);
+    background-color: var(--c-surface-elevated);
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--c-text);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--c-primary);
+    box-shadow: 0 0 0 3px hsla(21, 48%, 36%, 0.2);
+  }
+
+  .current-image {
+    max-width: 300px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-top: 0.5rem;
+    border: 1px solid var(--c-surface-secondary);
+  }
+  
+  .current-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+  
+  .mt-4 {
+    margin-top: 1rem;
+  }
+
+  .section-divider {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--c-surface-secondary);
+    font-size: 1.5rem;
+    color: var(--c-text);
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  
+  .form-actions.space-between {
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .action-group {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .text-danger {
+    color: var(--c-accent-alert);
+  }
+  
+  .text-secondary {
+    color: var(--c-secondary);
+  }
+  
+  .text-sm {
+    font-size: 0.85rem;
+  }
+
+  .error-text {
+    color: var(--c-accent-alert);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .alert-banner {
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 2rem;
+    text-align: center;
+    font-weight: 500;
+  }
+  
+  .alert-banner.error {
+    background-color: hsla(358, 70%, 66%, 0.1);
+    color: var(--c-accent-alert);
+    border: 1px solid hsla(358, 70%, 66%, 0.3);
+  }
+  
+  .alert-banner.success {
+    background-color: hsla(140, 60%, 45%, 0.1);
+    color: var(--c-accent-success);
+    border: 1px solid hsla(140, 60%, 45%, 0.3);
+  }
+
+  .animate-up {
+    animation: fadeInUp 0.6s ease forwards;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  input[type="file"] {
+    padding: 0.5rem;
+    background-color: var(--c-surface-elevated);
+    border: 1px dashed var(--c-primary);
+    cursor: pointer;
+  }
+</style>
