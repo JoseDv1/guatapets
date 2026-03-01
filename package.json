@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bunx prisma generate && astro dev",
     "build": "bunx prisma generate && astro build",
-    "vercel-build": "bunx prisma generate && prisma migrate deploy && astro build",
+    "vercel-build": "bunx prisma generate && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "postinstall": "prisma generate"
