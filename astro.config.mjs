@@ -6,11 +6,6 @@ export default defineConfig({
 
   env: {
       schema: {
-          DATABASE_URL: {
-              access: 'secret',
-              context: 'server',
-              type: 'string',
-          },
           CLOUDINARY_CLOUD_NAME: {
               access: 'secret',
               context: 'server',
