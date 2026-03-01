@@ -3,11 +3,11 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "bunx prisma generate && astro dev",
+    "build": "bunx prisma generate && astro build",
+    "vercel-build": "bunx prisma generate && prisma migrate deploy && astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "postinstall": "prisma generate"
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/vercel": "^9.0.4",
